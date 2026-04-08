@@ -81,3 +81,6 @@ app.listen(PORT, () => {
     console.log(`==============================================\n`);
     console.log(`Leave this terminal open while using the React testing app.`);
 });
+
+// Serve static files (like tester.html) from the current directory
+app.use(express.static(__dirname));

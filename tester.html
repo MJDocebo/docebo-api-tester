@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docebo API Role Tester</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        /* Custom scrollbar for a cleaner look */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+        .dark ::-webkit-scrollbar-thumb { background-color: #475569; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100 min-h-screen p-4 md:p-8 transition-colors">
+
+    <div class="max-w-7xl mx-auto space-y-6">
+        <!-- Header -->
+        <header class="flex items-center gap-4 bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800">
+            <div class="p-3 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded-xl">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+            </div>
+            <div>
+                <h1 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Docebo API Role Tester</h1>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Discover exactly which API endpoints a user role can access.</p>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Left Column: Configuration & Selection -->
+            <div class="lg:col-span-1 space-y-6">
+                
+                <!-- Config Panel -->
+                <div class="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 space-y-4">
+                    <h2 class="text-lg font-semibold flex items-center gap-2 border-b border-gray-100 dark:border-gray-800 pb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg>
+                        Environment Setup
+                    </h2>
+                    
+                    <form class="space-y-3" onsubmit="event.preventDefault();">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Docebo Base URL</label>
+                            <input type="text" id="baseUrl" value="mj-michael-james-demo.docebosaas.com" placeholder="your-domain.docebosaas.com" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed" />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Bearer Token (For testing access)</label>
+                            <input type="text" id="token" autocomplete="off" placeholder="eyJhbGciOiJIUzI1NiIs..." class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed" />
+                        </div>
+                        
+                        <div class="pt-2">
+                            <button type="button" id="fetchBtn" class="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition-colors disabled:opacity-50">
+                                <svg id="fetchIcon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                                <span id="fetchBtnText">Fetch Available Endpoints</span>
+                            </button>
+
+                            <button type="button" id="logoutBtn" class="hidden w-full flex items-center justify-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg font-medium transition-colors dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+                                Clear Session / Logout
+                            </button>
+                        </div>
+
+                        <div id="fetchError" class="hidden mt-2 p-3 bg-red-50 text-red-700 border border-red-200 rounded-lg text-sm items-start gap-2 dark:bg-red-900/30 dark:border-red-800 dark:text-red-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                            <p id="fetchErrorMsg"></p>
+                        </div>
+                        
+                        <div id="userInfoBox" class="hidden mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 rounded-lg flex-col gap-3">
+                            <div class="flex items-start gap-3">
+                                <div id="avatarContainer" class="bg-blue-200 dark:bg-blue-800 p-2 rounded-full text-blue-700 dark:text-blue-300 w-12 h-12 flex items-center justify-center shrink-0 overflow-hidden">
+                                    <svg id="defaultAvatarIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                    <img id="userAvatar" src="" alt="Avatar" class="hidden w-full h-full object-cover" />
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-xs text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wider">Authenticated As</p>
+                                    <p class="text-sm font-bold text-gray-900 dark:text-white leading-tight" id="sessionUsername">-</p>
+                                    <p class="text-xs text-gray-600 dark:text-gray-400 mt-1" id="sessionRole">-</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-500 font-mono">ID: <span id="sessionId">-</span></p>
+                                </div>
+                            </div>
+
+                            <div id="powerUserDetails" class="hidden w-full pt-3 border-t border-blue-200 dark:border-blue-800/50 mt-1">
+                                <details class="text-xs text-blue-800 dark:text-blue-300 group">
+                                    <summary class="font-semibold cursor-pointer select-none hover:text-blue-600 dark:hover:text-blue-200 transition-colors flex items-center gap-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transition-transform group-open:rotate-90"><path d="m9 18 6-6-6-6"/></svg>
+                                        View Power User Permissions & Assignments
+                                    </summary>
+                                    <div class="mt-3 space-y-3 pl-5">
+                                        <div>
+                                            <h4 class="font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-1">Assignments</h4>
+                                            <ul id="puAssignmentsList" class="list-disc list-outside space-y-0.5 text-gray-700 dark:text-gray-300 ml-3 marker:text-blue-400">
+                                            </ul>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-1">Permissions</h4>
+                                            <div id="puPermissionsList" class="space-y-1.5 text-gray-700 dark:text-gray-300">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </details>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Selection Panel -->
+                <div class="bg-white dark:bg-gray-900 flex flex-col h-[600px] rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800">
+                    <div class="p-4 border-b border-gray-100 dark:border-gray-800">
+                        <h2 class="text-lg font-semibold flex items-center justify-between">
+                            <span>Select APIs to Test</span>
+                            <span class="px-2 py-0.5 text-xs font-semibold rounded-md bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400">
+                                <span id="selectedCount">0</span> / <span id="totalCount">0</span> Selected
+                            </span>
+                        </h2>
+                        
+                        <form id="filtersForm" onsubmit="event.preventDefault();" class="hidden mt-3">
+                            <input type="text" id="searchInput" disabled autocomplete="off" placeholder="Filter by service, path, or tag..." class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-opacity" />
+                            
+                            <!-- Method Filters, CSV Import & Clear All -->
+                            <div class="mt-3 flex flex-col gap-3 border-t border-gray-100 dark:border-gray-800 pt-3">
+                                <!-- Top Row: Method Filters -->
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="text-xs font-medium text-gray-500 mr-1">Methods:</span>
+                                    <button type="button" disabled data-method="GET" class="method-filter-btn active opacity-100 disabled:opacity-50 disabled:cursor-not-allowed px-2 py-1 rounded-md text-xs font-semibold border bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-400 dark:border-emerald-800 transition-opacity">GET</button>
+                                    <button type="button" disabled data-method="POST" class="method-filter-btn active opacity-100 disabled:opacity-50 disabled:cursor-not-allowed px-2 py-1 rounded-md text-xs font-semibold border bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/40 dark:text-purple-400 dark:border-purple-800 transition-opacity">POST</button>
+                                    <button type="button" disabled data-method="PUT" class="method-filter-btn active opacity-100 disabled:opacity-50 disabled:cursor-not-allowed px-2 py-1 rounded-md text-xs font-semibold border bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/40 dark:text-amber-400 dark:border-amber-800 transition-opacity">PUT</button>
+                                    <button type="button" disabled data-method="DELETE" class="method-filter-btn active opacity-100 disabled:opacity-50 disabled:cursor-not-allowed px-2 py-1 rounded-md text-xs font-semibold border bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-900/40 dark:text-rose-400 dark:border-rose-800 transition-opacity">DELETE</button>
+                                    <button type="button" disabled data-method="PATCH" class="method-filter-btn active opacity-100 disabled:opacity-50 disabled:cursor-not-allowed px-2 py-1 rounded-md text-xs font-semibold border bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/40 dark:text-blue-400 dark:border-blue-800 transition-opacity">PATCH</button>
+                                </div>
+                                
+                                <!-- Bottom Row: CSV & Clear All -->
+                                <div class="flex flex-wrap items-center justify-between gap-4">
+                                    <div class="flex items-center gap-4">
+                                        <input type="file" id="csvUpload" accept=".csv" class="hidden" />
+                                        <button type="button" id="importCsvBtn" disabled class="text-xs font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+                                            Import CSV
+                                        </button>
+                                        <label class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 cursor-pointer">
+                                            <input type="checkbox" id="csvHasHeaders" checked disabled class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50" />
+                                            Has Headers
+                                        </label>
+                                    </div>
+                                    <button type="button" disabled id="clearAllBtn" class="text-xs font-medium text-gray-500 hover:text-gray-800 dark:hover:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline transition-colors underline underline-offset-2 shrink-0">Clear All</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div id="servicesList" class="flex-1 overflow-y-auto p-2 space-y-2">
+                        <div class="text-center p-8 text-gray-400 text-sm">No endpoints found. Please fetch APIs first.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Execution & Results -->
+            <div class="lg:col-span-2 space-y-6">
+                
+                <!-- Execution Runner -->
+                <div class="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 flex flex-col gap-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-lg font-semibold flex items-center gap-2">Test Execution Runner</h2>
+                            <p class="text-sm text-gray-500">Run tests to see which APIs bypass the 403 Forbidden checks.</p>
+                        </div>
+                        <div class="flex gap-3">
+                            <button type="button" id="stopBtn" class="hidden items-center gap-2 bg-red-100 text-red-700 hover:bg-red-200 py-2 px-4 rounded-lg font-medium transition-colors dark:bg-red-900/40 dark:text-red-400 dark:hover:bg-red-900/60">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/></svg>
+                                Stop Testing
+                            </button>
+                            <button type="button" id="startBtn" disabled class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-6 rounded-lg font-medium transition-colors disabled:opacity-50">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                Start Tests
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div id="progressContainer" class="hidden bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-100 dark:border-gray-800 space-y-3">
+                        <div class="flex justify-between text-sm font-medium">
+                            <span id="progressText" class="text-gray-700 dark:text-gray-300">Testing in progress...</span>
+                            <span class="text-blue-600 dark:text-blue-400"><span id="progressCurrent">0</span> / <span id="progressTotal">0</span></span>
+                        </div>
+                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
+                            <div id="progressBar" class="bg-blue-600 h-2.5 rounded-full transition-all duration-300 ease-out" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Summary Cards -->
+                    <div id="summaryCards" class="hidden grid-cols-3 gap-4 mt-2">
+                        <div class="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 p-4 rounded-xl flex flex-col items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-500 mb-1"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+                            <span id="countAllowed" class="text-2xl font-bold text-emerald-700 dark:text-emerald-400">0</span>
+                            <span class="text-xs font-medium text-emerald-600 dark:text-emerald-500 uppercase tracking-wide">Allowed (2xx)</span>
+                        </div>
+                        <div class="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/50 p-4 rounded-xl flex flex-col items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500 mb-1"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m12 8-2.5 5h5Z"/></svg>
+                            <span id="countForbidden" class="text-2xl font-bold text-red-700 dark:text-red-400">0</span>
+                            <span class="text-xs font-medium text-red-600 dark:text-red-500 uppercase tracking-wide">Forbidden (403)</span>
+                        </div>
+                        <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 p-4 rounded-xl flex flex-col items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-amber-500 mb-1"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                            <span id="countOther" class="text-2xl font-bold text-amber-700 dark:text-amber-400">0</span>
+                            <span class="text-xs font-medium text-amber-600 dark:text-amber-500 uppercase tracking-wide">Needs Check</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Table -->
+                <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col h-[600px]">
+                    <div class="p-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/20">
+                        <h2 class="text-lg font-semibold">Test Results <span class="text-xs font-normal text-gray-500 ml-2">(Click row for details & to edit/rerun tests)</span></h2>
+                    </div>
+                    
+                    <div class="flex-1 overflow-auto relative scroll-smooth">
+                        <div id="emptyResults" class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 space-y-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-20"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m12 8-2.5 5h5Z"/></svg>
+                            <p>No test results yet. Select APIs and click 'Start Tests'.</p>
+                        </div>
+                        <table id="resultsTable" class="w-full text-left text-sm whitespace-nowrap hidden">
+                            <thead class="bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 sticky top-0 uppercase text-xs font-semibold shadow-sm z-10">
+                                <tr>
+                                    <th class="px-4 py-3">Service</th>
+                                    <th class="px-4 py-3">Method</th>
+                                    <th class="px-4 py-3 w-full">Endpoint Path</th>
+                                    <th class="px-4 py-3">Status</th>
+                                    <th class="px-4 py-3 text-right">Access Result</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsBody" class="divide-y divide-gray-100 dark:divide-gray-800/50">
+                                <!-- Results appended here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 flex flex-col gap-2 z-50 items-center w-full px-4 pointer-events-none"></div>
+
+    <script>
+        // --- Configuration ---
+        const PROXY_URL = 'http://localhost:3001';
+
+        // --- State ---
+        let endpoints = [];
+        let groupedEndpoints = {};
+        let selectedIds = new Set();
+        let expandedServices = new Set();
+        let results = {}; // { id: { status, label, type, reqUrl, reqMethod, reqBody, resBody } }
+        let isRunning = false;
+        
+        // --- SVG Icons ---
+        const ICON_SEARCH = `<svg id="fetchIcon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>`;
+        const ICON_SPINNER = `<svg id="fetchIcon" class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+
+        // --- DOM Elements ---
+        const UI = {
+            baseUrl: document.getElementById('baseUrl'),
+            token: document.getElementById('token'),
+            fetchBtn: document.getElementById('fetchBtn'),
+            fetchBtnText: document.getElementById('fetchBtnText'),
+            logoutBtn: document.getElementById('logoutBtn'),
+            fetchError: document.getElementById('fetchError'),
+            fetchErrorMsg: document.getElementById('fetchErrorMsg'),
+            
+            userInfoBox: document.getElementById('userInfoBox'),
+            sessionUsername: document.getElementById('sessionUsername'),
+            sessionRole: document.getElementById('sessionRole'),
+            sessionId: document.getElementById('sessionId'),
+            avatarContainer: document.getElementById('avatarContainer'),
+            defaultAvatarIcon: document.getElementById('defaultAvatarIcon'),
+            userAvatar: document.getElementById('userAvatar'),
+            
+            powerUserDetails: document.getElementById('powerUserDetails'),
+            puAssignmentsList: document.getElementById('puAssignmentsList'),
+            puPermissionsList: document.getElementById('puPermissionsList'),
+            
+            filtersForm: document.getElementById('filtersForm'),
+            clearAllBtn: document.getElementById('clearAllBtn'),
+            servicesList: document.getElementById('servicesList'),
+            searchInput: document.getElementById('searchInput'),
+            methodFilterBtns: document.querySelectorAll('.method-filter-btn'),
+            selectedCount: document.getElementById('selectedCount'),
+            totalCount: document.getElementById('totalCount'),
+            
+            csvHasHeaders: document.getElementById('csvHasHeaders'),
+            csvUpload: document.getElementById('csvUpload'),
+            importCsvBtn: document.getElementById('importCsvBtn'),
+            toastContainer: document.getElementById('toastContainer'),
+            
+            startBtn: document.getElementById('startBtn'),
+            stopBtn: document.getElementById('stopBtn'),
+            progressContainer: document.getElementById('progressContainer'),
+            progressBar: document.getElementById('progressBar'),
+            progressText: document.getElementById('progressText'),
+            progressCurrent: document.getElementById('progressCurrent'),
+            progressTotal: document.getElementById('progressTotal'),
+            
+            summaryCards: document.getElementById('summaryCards'),
+            countAllowed: document.getElementById('countAllowed'),
+            countForbidden: document.getElementById('countForbidden'),
+            countOther: document.getElementById('countOther'),
+            
+            resultsTable: document.getElementById('resultsTable'),
+            resultsBody: document.getElementById('resultsBody'),
+            emptyResults: document.getElementById('emptyResults'),
+        };
+
+        // --- Initialization ---
+        function init() {
+            const saved = localStorage.getItem('docebo-rbac-config-html');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    if (parsed.baseUrl) UI.baseUrl.value = parsed.baseUrl;
+                    if (parsed.token) UI.token.value = parsed.token;
+                } catch (e) { console.error('Failed to parse config'); }
+            }
+
+            // Event Listeners
+            UI.baseUrl.addEventListener('input', saveConfig);
+            UI.token.addEventListener('input', saveConfig);
+            UI.fetchBtn.addEventListener('click', fetchEndpoints);
+            UI.logoutBtn.addEventListener('click', logout);
+            UI.searchInput.addEventListener('input', renderServices);
+            UI.startBtn.addEventListener('click', executeTests);
+            UI.stopBtn.addEventListener('click', stopTests);
+            UI.clearAllBtn.addEventListener('click', clearAllFilters);
+            
+            // CSV Import Listeners
+            UI.importCsvBtn.addEventListener('click', () => UI.csvUpload.click());
+            UI.csvUpload.addEventListener('change', handleCsvUpload);
+            
+            // Method filter listeners
+            UI.methodFilterBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.target.classList.toggle('active');
+                    e.target.classList.toggle('opacity-50');
+                    e.target.classList.toggle('opacity-100');
+                    renderServices();
+                });
+            });
+        }
+
+        function saveConfig() {
+            localStorage.setItem('docebo-rbac-config-html', JSON.stringify({
+                baseUrl: UI.baseUrl.value,
+                token: UI.token.value
+            }));
+        }
+
+        // --- Helpers ---
+        function getMethodColor(method) {
+            const colors = {
+                GET: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800",
+                POST: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-400 border border-purple-200 dark:border-purple-800",
+                PUT: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-400 border border-amber-200 dark:border-amber-800",
+                DELETE: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-400 border border-rose-200 dark:border-rose-800",
+                PATCH: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-400 border border-blue-200 dark:border-blue-800",
+            };
+            return colors[method] || "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
+        }
+
+        function showError(msg) {
+            UI.fetchErrorMsg.textContent = msg;
+            UI.fetchError.style.display = 'flex';
+        }
+        function hideError() {
+            UI.fetchError.style.display = 'none';
+        }
+
+        function escapeHtml(unsafe) {
+            if (!unsafe) return "";
+            return unsafe
+                 .toString()
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+
+        function clearAllFilters() {
+            selectedIds.clear();
+            expandedServices.clear();
+            UI.searchInput.value = '';
+            UI.methodFilterBtns.forEach(btn => {
+                btn.classList.add('active', 'opacity-100');
+                btn.classList.remove('opacity-50');
+            });
+            renderServices();
+        }
+
+        // --- Toast Notifications ---
+        function showToast(title, message, isError = false) {
+            const toastId = 'toast-' + Date.now();
+            const bgClass = isError ? 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800' : 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800';
+            const textClass = isError ? 'text-red-800 dark:text-red-300' : 'text-emerald-800 dark:text-emerald-300';
+            
+            const html = `
+            <div id="${toastId}" class="max-w-lg w-full shadow-lg rounded-lg pointer-events-auto border ${bgClass} p-4 transition-all duration-300 transform translate-y-0 opacity-100">
+                <div class="flex items-start">
+                    <div class="w-0 flex-1 pt-0.5">
+                        <p class="text-sm font-bold ${textClass}">${title}</p>
+                        <p class="mt-1 text-xs ${textClass} opacity-90">${message}</p>
+                    </div>
+                    <div class="ml-4 flex-shrink-0 flex">
+                        <button onclick="document.getElementById('${toastId}').remove()" class="rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none">
+                            <span class="sr-only">Close</span>
+                            <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+            
+            UI.toastContainer.insertAdjacentHTML('beforeend', html);
+            
+            setTimeout(() => {
+                const t = document.getElementById(toastId);
+                if (t) {
+                    t.classList.add('opacity-0', 'translate-y-2');
+                    setTimeout(() => t.remove(), 300);
+                }
+            }, 8000); // 8 seconds
+        }
+
+        // --- Handle CSV Upload ---
+        function handleCsvUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const text = evt.target.result;
+                const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
+                
+                if (lines.length === 0) {
+                    showToast('Empty File', 'The uploaded CSV file is empty.', true);
+                    return;
+                }
+
+                if (UI.csvHasHeaders.checked) {
+                    lines.shift(); // Remove header row
+                }
+
+                let foundCount = 0;
+                let notFoundList = [];
+
+                lines.forEach(line => {
+                    const parts = line.split(',');
+                    if (parts.length >= 2) {
+                        const method = parts[0].trim().toUpperCase();
+                        const path = parts[1].trim().replace(/^"|"$/g, '');
+
+                        const ep = endpoints.find(e => e.method === method && e.path === path);
+                        if (ep) {
+                            selectedIds.add(ep.id);
+                            expandedServices.add(ep.service); // ensure service is expanded to show selection
+                            foundCount++;
+                        } else {
+                            notFoundList.push(`${method} ${path}`);
+                        }
+                    }
+                });
+
+                renderServices();
+                
+                if (notFoundList.length > 0) {
+                    showToast('Import Complete with Missing Endpoints', `Found ${foundCount} endpoints. Could not find ${notFoundList.length} endpoints (e.g., ${escapeHtml(notFoundList.slice(0, 3).join(', '))}).`, true);
+                } else {
+                    showToast('Import Successful', `Successfully found and selected all ${foundCount} endpoints!`, false);
+                }
+
+                UI.csvUpload.value = ''; // Reset file input
+            };
+            reader.readAsText(file);
+        }
+
+        // --- Schema Payload Generator ---
+        function resolveRef(ref, swaggerJson) {
+            if (!ref || !ref.startsWith("#/")) return null;
+            const parts = ref.substring(2).split("/");
+            let current = swaggerJson;
+            for (const part of parts) {
+                if (current && part in current) {
+                    current = current[part];
+                } else {
+                    return null;
+                }
+            }
+            return current;
+        }
+
+        function generateExampleFromSchema(schema, swaggerJson, visited = new Set()) {
+            if (!schema) return {};
+            if (schema.$ref) {
+                if (visited.has(schema.$ref)) return {}; // Prevent circular loops
+                visited.add(schema.$ref);
+                const resolvedSchema = resolveRef(schema.$ref, swaggerJson);
+                const result = generateExampleFromSchema(resolvedSchema, swaggerJson, visited);
+                visited.delete(schema.$ref);
+                return result;
+            }
+
+            switch (schema.type) {
+                case "object":
+                    const obj = {};
+                    if (schema.properties) {
+                        for (const key in schema.properties) {
+                            obj[key] = generateExampleFromSchema(schema.properties[key], swaggerJson, visited);
+                        }
+                    }
+                    return obj;
+                case "array":
+                    if (schema.items) {
+                        return [generateExampleFromSchema(schema.items, swaggerJson, visited)];
+                    }
+                    return [];
+                case "string":
+                    return "test_string";
+                case "integer":
+                case "number":
+                    return 1;
+                case "boolean":
+                    return true;
+                default:
+                    if (schema.properties) {
+                        const defaultObj = {};
+                        for (const key in schema.properties) {
+                            defaultObj[key] = generateExampleFromSchema(schema.properties[key], swaggerJson, visited);
+                        }
+                        return defaultObj;
+                    }
+                    return {};
+            }
+        }
+
+        function logout() {
+            UI.token.value = '';
+            saveConfig();
+            
+            // Unlock inputs
+            UI.baseUrl.disabled = false;
+            UI.token.disabled = false;
+            
+            // Disable filters and CSV options
+            UI.searchInput.disabled = true;
+            UI.clearAllBtn.disabled = true;
+            UI.csvHasHeaders.disabled = true;
+            UI.importCsvBtn.disabled = true;
+            UI.methodFilterBtns.forEach(btn => btn.disabled = true);
+            
+            // Swap buttons
+            UI.logoutBtn.classList.add('hidden');
+            UI.logoutBtn.classList.remove('flex');
+            UI.fetchBtn.classList.remove('hidden');
+            UI.fetchBtn.classList.add('flex');
+            
+            const activeIcon = document.getElementById('fetchIcon');
+            if(activeIcon) activeIcon.outerHTML = ICON_SEARCH;
+            
+            // Hide User Info & clear data
+            UI.userInfoBox.classList.add('hidden');
+            UI.userInfoBox.classList.remove('flex');
+            UI.userAvatar.src = '';
+            
+            UI.powerUserDetails.classList.add('hidden');
+            UI.puAssignmentsList.innerHTML = '';
+            UI.puPermissionsList.innerHTML = '';
+            
+            UI.filtersForm.classList.add('hidden');
+            
+            endpoints = [];
+            groupedEndpoints = {};
+            results = {};
+            
+            // Clear filter states behind the scenes without triggering renderServices
+            selectedIds.clear();
+            expandedServices.clear();
+            UI.searchInput.value = '';
+            UI.methodFilterBtns.forEach(btn => {
+                btn.classList.add('active', 'opacity-100');
+                btn.classList.remove('opacity-50');
+            });
+            UI.selectedCount.textContent = "0";
+            UI.totalCount.textContent = "0";
+            
+            // Reset API list view directly
+            UI.servicesList.innerHTML = `<div class="text-center p-8 text-gray-400 text-sm">No endpoints found. Please fetch APIs first.</div>`;
+            
+            // Reset UI tables
+            UI.resultsTable.style.display = 'none';
+            UI.emptyResults.style.display = 'flex';
+            UI.summaryCards.classList.add('hidden');
+            UI.summaryCards.classList.remove('grid');
+            UI.progressContainer.classList.add('hidden');
+        }
+
+        // --- API Discovery ---
+        async function fetchEndpoints() {
+            const baseUrl = UI.baseUrl.value.trim();
+            const token = UI.token.value.trim();
+
+            if (!baseUrl) return showError("Base URL is required.");
+            if (!token) return showError("A Bearer token is required to fetch endpoints and identify the user role.");
+            
+            UI.fetchBtn.disabled = true;
+            const activeIcon = document.getElementById('fetchIcon');
+            if (activeIcon) activeIcon.outerHTML = ICON_SPINNER;
+            hideError();
+            UI.userInfoBox.classList.add('hidden');
+            
+            // Set loading status in the API list area instead of the button text
+            UI.servicesList.innerHTML = `
+                <div class="flex flex-col items-center justify-center p-12 text-gray-500 dark:text-gray-400">
+                    <svg class="animate-spin h-8 w-8 text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <p id="loadingStatusText" class="text-sm font-medium">Connecting to proxy...</p>
+                </div>`;
+            
+            endpoints = [];
+            selectedIds.clear();
+            results = {};
+            
+            try {
+                // Fetch User Session Info First
+                const sessionUrl = `https://${baseUrl}/manage/v1/user/session`;
+                const sessionReqUrl = `${PROXY_URL}/proxy?url=${encodeURIComponent(sessionUrl)}`;
+                
+                const sessionRes = await fetch(sessionReqUrl, { 
+                    headers: { 
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json, text/plain, */*',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    } 
+                });
+                
+                if (!sessionRes.ok) {
+                    if (sessionRes.status === 401) {
+                        throw new Error("Invalid or expired Bearer token.");
+                    }
+                    throw new Error(`HTTP Error ${sessionRes.status}: Failed to fetch user session info.`);
+                }
+                
+                const sessionData = await sessionRes.json();
+                const user = sessionData.data;
+                if (user) {
+                    UI.sessionUsername.textContent = user.username || "Unknown User";
+                    
+                    const role = user.user_level || "Unknown Role";
+                    const formattedRole = role.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                    UI.sessionRole.textContent = `Role: ${formattedRole}`;
+                    UI.sessionId.textContent = user.id || "-";
+                    
+                    // Handle Avatar
+                    if (user.avatar_url && !user.avatar_url.includes('default')) {
+                        let avatarSrc = user.avatar_url;
+                        if (avatarSrc.startsWith('//')) avatarSrc = 'https:' + avatarSrc;
+                        UI.userAvatar.src = avatarSrc;
+                        UI.userAvatar.classList.remove('hidden');
+                        UI.defaultAvatarIcon.classList.add('hidden');
+                        UI.avatarContainer.classList.remove('p-2');
+                    } else {
+                        UI.userAvatar.classList.add('hidden');
+                        UI.defaultAvatarIcon.classList.remove('hidden');
+                        UI.avatarContainer.classList.add('p-2');
+                    }
+
+                    UI.userInfoBox.classList.remove('hidden');
+                    UI.userInfoBox.classList.add('flex');
+                    
+                    // Fetch Power User Details if applicable
+                    if (user.user_level === 'poweruser' || user.user_level === 'power_user') {
+                        try {
+                            const puUrl = `https://${baseUrl}/poweruser/v1/powerusers/${user.id}`;
+                            const puRes = await fetch(`${PROXY_URL}/proxy?url=${encodeURIComponent(puUrl)}`, {
+                                headers: { 
+                                    'Authorization': `Bearer ${token}`,
+                                    'Accept': 'application/json, text/plain, */*',
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                }
+                            });
+                            
+                            if (puRes.ok) {
+                                const puData = await puRes.json();
+                                const pu = puData.data;
+                                
+                                // Format Assignments
+                                const assignmentsMap = [
+                                    { label: 'Users', key: 'total_assigned_users' },
+                                    { label: 'Groups', key: 'total_assigned_groups' },
+                                    { label: 'Branches', key: 'total_assigned_branches' },
+                                    { label: 'Courses', key: 'total_assigned_courses' },
+                                    { label: 'Learning Plans', key: 'total_assigned_lps' },
+                                    { label: 'Categories', key: 'total_assigned_categories' },
+                                    { label: 'Catalogs', key: 'total_assigned_catalogs' },
+                                    { label: 'Locations', key: 'total_assigned_locations' },
+                                    { label: 'TM Repo Folders', key: 'total_assigned_tmrepo_folders' },
+                                    { label: 'Communities', key: 'total_assigned_communities' },
+                                    { label: 'Channels', key: 'total_assigned_channels' }
+                                ];
+                                
+                                let assignmentsHtml = '';
+                                assignmentsMap.forEach(item => {
+                                    if (pu[item.key] !== undefined) {
+                                        assignmentsHtml += `<li><span class="font-medium">${item.label}:</span> ${pu[item.key]}</li>`;
+                                    }
+                                });
+                                UI.puAssignmentsList.innerHTML = assignmentsHtml;
+                                
+                                // Format Permissions
+                                const permsByArea = {};
+                                if (pu.permissions && Array.isArray(pu.permissions)) {
+                                    pu.permissions.forEach(p => {
+                                        if (!permsByArea[p.area]) permsByArea[p.area] = [];
+                                        
+                                        // Remove the area prefix from the code string if it exists for cleaner reading
+                                        let action = p.code;
+                                        if (p.code.startsWith(p.area + '/')) {
+                                            action = p.code.substring(p.area.length + 1);
+                                        }
+                                        permsByArea[p.area].push(action);
+                                    });
+                                }
+                                
+                                let permsHtml = '';
+                                for (const [area, actions] of Object.entries(permsByArea)) {
+                                    permsHtml += `<div><span class="font-medium capitalize">${area}:</span> ${actions.join(', ')}</div>`;
+                                }
+                                if (permsHtml === '') permsHtml = '<div class="italic text-gray-500">No specific permissions found.</div>';
+                                
+                                UI.puPermissionsList.innerHTML = permsHtml;
+                                UI.powerUserDetails.classList.remove('hidden');
+                            }
+                        } catch (err) {
+                            console.warn("Could not fetch power user details", err);
+                        }
+                    } else {
+                        UI.powerUserDetails.classList.add('hidden');
+                    }
+                }
+
+                const targetServicesUrl = `https://${baseUrl}/manage/v1/site/microservices`;
+                const reqUrl = `${PROXY_URL}/proxy?url=${encodeURIComponent(targetServicesUrl)}`;
+
+                const res = await fetch(reqUrl, { 
+                    headers: { 
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json, text/plain, */*',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    } 
+                });
+                
+                if (!res.ok) throw new Error(`HTTP Error ${res.status}: Failed to reach microservices via proxy.`);
+                
+                const servicesData = await res.json();
+                if (!servicesData.data || servicesData.data.length === 0) throw new Error("No microservices found.");
+
+                // Lock inputs since authentication was successful
+                UI.baseUrl.disabled = true;
+                UI.token.disabled = true;
+
+                // Chunk fetching to not kill the proxy
+                const chunkSize = 5;
+                const totalSchemas = servicesData.data.length;
+                let loadedSchemas = 0;
+
+                for (let i = 0; i < totalSchemas; i += chunkSize) {
+                    const chunk = servicesData.data.slice(i, i + chunkSize);
+                    await Promise.all(chunk.map(async (svc) => {
+                        try {
+                            const schemaRes = await fetch(`${PROXY_URL}/proxy?url=${encodeURIComponent(svc.url)}`, {
+                                headers: {
+                                    'Accept': 'application/json, text/plain, */*',
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                }
+                            });
+                            if (!schemaRes.ok) return;
+                            const swagger = await schemaRes.json();
+                            
+                            if (swagger && swagger.paths) {
+                                const basePath = swagger.basePath && swagger.basePath !== '/' ? swagger.basePath : '';
+                                
+                                for (const path in swagger.paths) {
+                                    for (const method in swagger.paths[path]) {
+                                        const epData = swagger.paths[path][method];
+                                        let dummyBody = {};
+                                        let queryParams = [];
+                                        
+                                        // Parse required query parameters and schema body 
+                                        if (epData.parameters) {
+                                            epData.parameters.forEach(p => {
+                                                if (p.in === 'query' && p.required) {
+                                                    queryParams.push(p.name);
+                                                } else if (p.in === 'body' && ['post', 'put', 'patch'].includes(method.toLowerCase())) {
+                                                    if (p.schema) {
+                                                        dummyBody = generateExampleFromSchema(p.schema, swagger);
+                                                    }
+                                                }
+                                            });
+                                        }
+
+                                        let fullPath = path;
+                                        if (basePath) {
+                                            fullPath = basePath + (path.startsWith('/') ? path : '/' + path);
+                                        }
+                                        if (!fullPath.startsWith('/')) fullPath = '/' + fullPath;
+
+                                        // Extract subgroup tag
+                                        const tag = (epData.tags && epData.tags.length > 0) ? epData.tags[0] : 'General';
+
+                                        endpoints.push({
+                                            id: `${svc.app}-${method.toUpperCase()}-${fullPath}`,
+                                            service: svc.app,
+                                            tag: tag,
+                                            method: method.toUpperCase(),
+                                            path: fullPath,
+                                            dummyBody: dummyBody,
+                                            queryParams: queryParams
+                                        });
+                                    }
+                                }
+                            }
+                        } catch (e) {
+                            console.warn(`Failed schema for ${svc.app}`);
+                        } finally {
+                            loadedSchemas++;
+                            const statusText = document.getElementById('loadingStatusText');
+                            if (statusText) statusText.textContent = `Loading schemas (${loadedSchemas}/${totalSchemas})...`;
+                        }
+                    }));
+                }
+
+                endpoints.sort((a, b) => a.service.localeCompare(b.service) || a.tag.localeCompare(b.tag) || a.path.localeCompare(b.path));
+                UI.totalCount.textContent = endpoints.length;
+                
+                // Swap buttons now that loading is completely finished
+                UI.fetchBtn.classList.add('hidden');
+                UI.fetchBtn.classList.remove('flex');
+                UI.logoutBtn.classList.remove('hidden');
+                UI.logoutBtn.classList.add('flex');
+                
+                // Enable the Search and Filter Area
+                UI.filtersForm.classList.remove('hidden');
+                UI.searchInput.disabled = false;
+                UI.clearAllBtn.disabled = false;
+                UI.csvHasHeaders.disabled = false;
+                UI.importCsvBtn.disabled = false;
+                UI.methodFilterBtns.forEach(btn => btn.disabled = false);
+
+                renderServices();
+                
+            } catch (err) {
+                if (err.message.includes('Failed to fetch')) {
+                    showError("Failed to connect to local proxy. Make sure you are running 'node local-proxy.js' in your terminal.");
+                } else {
+                    showError(err.message || "Failed to fetch APIs.");
+                }
+                UI.servicesList.innerHTML = `<div class="text-center p-8 text-gray-400 text-sm">No endpoints found. Please fetch APIs first.</div>`;
+            } finally {
+                UI.fetchBtn.disabled = false;
+                const activeIcon = document.getElementById('fetchIcon');
+                if(activeIcon) activeIcon.outerHTML = `<svg id="fetchIcon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>`;
+                UI.fetchBtnText.textContent = "Fetch Available Endpoints";
+            }
+        }
+
+        // --- UI Rendering ---
+        function renderServices() {
+            const term = UI.searchInput.value.toLowerCase();
+            const activeMethods = Array.from(document.querySelectorAll('.method-filter-btn.active')).map(btn => btn.dataset.method);
+
+            groupedEndpoints = {};
+            
+            endpoints.forEach(ep => {
+                // Method Filter
+                if (activeMethods.length > 0 && !activeMethods.includes(ep.method)) return;
+                
+                // Text Filter
+                if (term && !ep.path.toLowerCase().includes(term) && !ep.service.toLowerCase().includes(term) && !ep.tag.toLowerCase().includes(term)) return;
+                
+                if (!groupedEndpoints[ep.service]) groupedEndpoints[ep.service] = { total: 0, tags: {} };
+                if (!groupedEndpoints[ep.service].tags[ep.tag]) groupedEndpoints[ep.service].tags[ep.tag] = [];
+                
+                groupedEndpoints[ep.service].tags[ep.tag].push(ep);
+                groupedEndpoints[ep.service].total++;
+            });
+
+            if (Object.keys(groupedEndpoints).length === 0) {
+                UI.servicesList.innerHTML = `<div class="text-center p-8 text-gray-400 text-sm">No endpoints match your filters.</div>`;
+                return;
+            }
+
+            let html = '';
+            for (const [service, serviceData] of Object.entries(groupedEndpoints)) {
+                const isExpanded = expandedServices.has(service);
+                
+                // Calculate if all endpoints within this service are selected
+                let allEpsInService = [];
+                Object.values(serviceData.tags).forEach(arr => allEpsInService = allEpsInService.concat(arr));
+                const allSelected = allEpsInService.every(ep => selectedIds.has(ep.id));
+                
+                const iconPath = isExpanded ? 'm6 9 6 6 6-6' : 'm9 18 6-6-6-6';
+                const checkClass = allSelected ? 'text-blue-600 dark:text-blue-500' : 'text-gray-400';
+                
+                html += `
+                <div class="bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
+                    <div class="flex items-center justify-between p-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer select-none" onclick="toggleService('${service}')">
+                        <div class="flex items-center gap-2 flex-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400"><path d="${iconPath}"/></svg>
+                            <span class="font-semibold capitalize text-sm">${service}</span>
+                            <span class="text-xs text-gray-500">(${serviceData.total})</span>
+                        </div>
+                        <button type="button" onclick="toggleServiceGroup(event, '${service}')" class="text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 p-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${checkClass}"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>${allSelected ? '<path d="m9 12 2 2 4-4"/>' : ''}</svg>
+                        </button>
+                    </div>`;
+
+                if (isExpanded) {
+                    html += `<div class="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col">`;
+                    
+                    for (const [tag, eps] of Object.entries(serviceData.tags)) {
+                        const allTagSelected = eps.every(ep => selectedIds.has(ep.id));
+                        const tagCheckClass = allTagSelected ? 'text-blue-600 dark:text-blue-500' : 'text-gray-400';
+
+                        // Tag Sub-header
+                        html += `
+                        <div class="px-3 py-1.5 bg-gray-100/50 dark:bg-gray-800/80 border-y border-gray-100 dark:border-gray-800/50 flex justify-between items-center">
+                            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">${tag}</span>
+                            <button type="button" onclick="toggleTagGroup(event, '${service}', '${tag}')" class="text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 p-0.5">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${tagCheckClass}"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>${allTagSelected ? '<path d="m9 12 2 2 4-4"/>' : ''}</svg>
+                            </button>
+                        </div>`;
+
+                        html += `<div class="divide-y divide-gray-100 dark:divide-gray-800/50 pl-2">`;
+                        eps.forEach(ep => {
+                            const isSelected = selectedIds.has(ep.id);
+                            const epCheckClass = isSelected ? 'text-blue-600 dark:text-blue-500' : 'text-gray-400';
+                            html += `
+                            <div class="flex items-center gap-3 p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer" onclick="toggleEndpoint('${ep.id}')">
+                                <div class="shrink-0 pl-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${epCheckClass}"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>${isSelected ? '<path d="m9 12 2 2 4-4"/>' : ''}</svg>
+                                </div>
+                                <span class="px-2 py-0.5 text-xs font-semibold rounded-md ${getMethodColor(ep.method)}">${ep.method}</span>
+                                <span class="text-xs font-mono text-gray-600 dark:text-gray-300 truncate" title="${ep.path}">${ep.path}</span>
+                            </div>`;
+                        });
+                        html += `</div>`;
+                    }
+                    html += `</div>`;
+                }
+                html += `</div>`;
+            }
+            UI.servicesList.innerHTML = html;
+            updateSelectionState();
+        }
+
+        function updateSelectionState() {
+            UI.selectedCount.textContent = selectedIds.size;
+            UI.startBtn.disabled = selectedIds.size === 0 || isRunning;
+        }
+
+        // --- Interaction Logic ---
+        window.toggleService = (service) => {
+            if (expandedServices.has(service)) expandedServices.delete(service);
+            else expandedServices.add(service);
+            renderServices();
+        };
+
+        window.toggleEndpoint = (id) => {
+            if (selectedIds.has(id)) selectedIds.delete(id);
+            else selectedIds.add(id);
+            renderServices();
+        };
+
+        window.toggleServiceGroup = (e, service) => {
+            e.stopPropagation();
+            const serviceData = groupedEndpoints[service];
+            if(!serviceData) return;
+            
+            let allEps = [];
+            Object.values(serviceData.tags).forEach(arr => allEps = allEps.concat(arr));
+            
+            const allSelected = allEps.every(ep => selectedIds.has(ep.id));
+            allEps.forEach(ep => {
+                if (allSelected) selectedIds.delete(ep.id);
+                else selectedIds.add(ep.id);
+            });
+            renderServices();
+        };
+
+        window.toggleTagGroup = (e, service, tag) => {
+            e.stopPropagation();
+            const eps = groupedEndpoints[service].tags[tag] || [];
+            const allSelected = eps.every(ep => selectedIds.has(ep.id));
+            
+            eps.forEach(ep => {
+                if (allSelected) selectedIds.delete(ep.id);
+                else selectedIds.add(ep.id);
+            });
+            renderServices();
+        };
+
+        // --- Test Execution ---
+        async function executeTests() {
+            const token = UI.token.value.trim();
+            if (!token) return alert("A Bearer token is required to run access tests.");
+
+            isRunning = true;
+            results = {};
+            
+            UI.startBtn.classList.add('hidden');
+            UI.startBtn.classList.remove('flex');
+            UI.stopBtn.classList.remove('hidden');
+            UI.stopBtn.classList.add('flex');
+            UI.progressContainer.classList.remove('hidden');
+            UI.summaryCards.classList.remove('grid');
+            UI.summaryCards.classList.add('hidden');
+            
+            UI.progressText.textContent = "Testing in progress...";
+            
+            // Clear and prepare the table
+            UI.emptyResults.style.display = 'none';
+            UI.resultsTable.style.display = 'table';
+            UI.resultsBody.innerHTML = '';
+
+            const epsToTest = endpoints.filter(ep => selectedIds.has(ep.id));
+            const total = epsToTest.length;
+            UI.progressTotal.textContent = total;
+
+            const baseUrl = UI.baseUrl.value.trim();
+
+            for (let i = 0; i < total; i++) {
+                if (!isRunning) break;
+                
+                const ep = epsToTest[i];
+                UI.progressCurrent.textContent = i + 1;
+                UI.progressBar.style.width = `${((i + 1) / total) * 100}%`;
+                
+                const safePath = ep.path.replace(/\{[^}]+\}/g, '1');
+                
+                let queryString = '';
+                if (ep.queryParams && ep.queryParams.length > 0) {
+                    const params = new URLSearchParams();
+                    ep.queryParams.forEach(q => params.append(q, '1'));
+                    queryString = '?' + params.toString();
+                }
+                
+                const targetUrl = `https://${baseUrl}${safePath}${queryString}`;
+                const targetPath = `${safePath}${queryString}`;
+                const reqBodyRaw = ['POST', 'PUT', 'PATCH'].includes(ep.method) ? JSON.stringify(ep.dummyBody || {}) : undefined;
+                let resBodyText = "";
+                
+                try {
+                    const res = await fetch(`${PROXY_URL}/proxy?url=${encodeURIComponent(targetUrl)}`, {
+                        method: ep.method,
+                        headers: { 
+                            'Authorization': `Bearer ${token}`, 
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json, text/plain, */*',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: reqBodyRaw
+                    });
+
+                    resBodyText = await res.text();
+
+                    const contentType = res.headers.get('content-type') || '';
+                    const bodyTrimmed = resBodyText.trim().toLowerCase();
+                    const isXml = bodyTrimmed.startsWith('<?xml');
+                    const isHtml = !isXml && (contentType.includes('text/html') || bodyTrimmed.startsWith('<!doctype'));
+
+                    let label = 'Unknown';
+                    let type = 'error';
+
+                    if (res.status === 403) {
+                        label = 'Forbidden (Role Denied)'; type = 'forbidden';
+                    } else if (res.status === 401) {
+                        label = 'Unauthorized (Bad Token)'; type = 'unauthorized';
+                    } else if (isHtml && res.status === 200) {
+                        label = 'Forbidden (HTML Redirect)'; type = 'forbidden';
+                    } else if (res.status >= 200 && res.status < 300) {
+                        label = `Allowed (${res.status})`; type = 'allowed';
+                    } else {
+                        label = `Needs Check (${res.status})`; type = 'check';
+                    }
+                    
+                    results[ep.id] = { 
+                        status: res.status, 
+                        label, type, reqUrl: targetUrl, reqPath: targetPath, reqMethod: ep.method, reqBody: reqBodyRaw, resBody: resBodyText
+                    };
+
+                } catch (err) {
+                    if (err.message.includes('Failed to fetch')) {
+                         results[ep.id] = { status: 'ERR', label: 'Proxy Offline', type: 'error', reqUrl: targetUrl, reqPath: targetPath, reqMethod: ep.method, reqBody: reqBodyRaw, resBody: "" };
+                    } else {
+                         results[ep.id] = { status: 'ERR', label: 'Network Error', type: 'error', reqUrl: targetUrl, reqPath: targetPath, reqMethod: ep.method, reqBody: reqBodyRaw, resBody: err.message };
+                    }
+                }
+
+                updateOrAppendResultRow(ep, results[ep.id]);
+                updateSummaryCards();
+
+                await new Promise(r => setTimeout(r, 150)); // Rate limit buffer
+            }
+
+            if (isRunning) {
+                UI.progressText.textContent = "Testing completed!";
+            }
+            stopTests();
+        }
+
+        function stopTests() {
+            isRunning = false;
+            UI.stopBtn.classList.add('hidden');
+            UI.stopBtn.classList.remove('flex');
+            UI.startBtn.classList.remove('hidden');
+            UI.startBtn.classList.add('flex');
+            UI.startBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Re-Run Tests`;
+            updateSummaryCards();
+        }
+
+        function updateSummaryCards() {
+            const resultValues = Object.values(results);
+            if (resultValues.length === 0) return;
+            
+            const allowed = resultValues.filter(r => r.type === 'allowed').length;
+            const forbidden = resultValues.filter(r => r.type === 'forbidden').length;
+            const check = resultValues.filter(r => r.type === 'check' || r.type === 'error' || r.type === 'unauthorized').length;
+
+            UI.countAllowed.textContent = allowed;
+            UI.countForbidden.textContent = forbidden;
+            UI.countOther.textContent = check;
+
+            UI.summaryCards.classList.remove('hidden');
+            UI.summaryCards.classList.add('grid');
+        }
+
+        window.toggleDetailRow = function(e, rowId) {
+            // Prevent toggling if user clicks on an input or button inside the row
+            if(e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'TEXTAREA') return;
+            const row = document.getElementById(rowId);
+            if (row) row.classList.toggle('hidden');
+        };
+
+        window.rerunSingleTest = async function(epId) {
+            const ep = endpoints.find(e => e.id === epId);
+            if (!ep) return;
+            
+            const token = UI.token.value.trim();
+            const baseUrl = UI.baseUrl.value.trim();
+            const pathInput = document.getElementById(`rerun-path-${epId}`);
+            const bodyInput = document.getElementById(`rerun-body-${epId}`);
+            const btn = document.getElementById(`rerun-btn-${epId}`);
+            
+            if (!pathInput || !btn) return;
+            
+            const newPath = pathInput.value.trim();
+            
+            btn.disabled = true;
+            btn.innerHTML = ICON_SPINNER;
+            
+            const targetUrl = `https://${baseUrl}${newPath}`;
+            
+            let reqBodyRaw = undefined;
+            if (['POST', 'PUT', 'PATCH'].includes(ep.method)) {
+                if (bodyInput) {
+                    reqBodyRaw = bodyInput.value;
+                } else {
+                    reqBodyRaw = JSON.stringify(ep.dummyBody || {});
+                }
+            }
+            
+            let resBodyText = "";
+            
+            try {
+                const res = await fetch(`${PROXY_URL}/proxy?url=${encodeURIComponent(targetUrl)}`, {
+                    method: ep.method,
+                    headers: { 
+                        'Authorization': `Bearer ${token}`, 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json, text/plain, */*',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: reqBodyRaw
+                });
+
+                resBodyText = await res.text();
+
+                const contentType = res.headers.get('content-type') || '';
+                const bodyTrimmed = resBodyText.trim().toLowerCase();
+                const isXml = bodyTrimmed.startsWith('<?xml'); 
+                const isHtml = !isXml && (contentType.includes('text/html') || bodyTrimmed.startsWith('<!doctype'));
+
+                let label = 'Unknown';
+                let type = 'error';
+
+                if (res.status === 403) {
+                    label = 'Forbidden (Role Denied)'; type = 'forbidden';
+                } else if (res.status === 401) {
+                    label = 'Unauthorized (Bad Token)'; type = 'unauthorized';
+                } else if (isHtml && res.status === 200) {
+                    label = 'Forbidden (HTML Redirect)'; type = 'forbidden';
+                } else if (res.status >= 200 && res.status < 300) {
+                    label = `Allowed (${res.status})`; type = 'allowed';
+                } else {
+                    label = `Needs Check (${res.status})`; type = 'check';
+                }
+                
+                results[ep.id] = { 
+                    status: res.status, label, type, reqUrl: targetUrl, reqPath: newPath, reqMethod: ep.method, reqBody: reqBodyRaw, resBody: resBodyText
+                };
+
+            } catch (err) {
+                if (err.message.includes('Failed to fetch')) {
+                     results[ep.id] = { status: 'ERR', label: 'Proxy Offline', type: 'error', reqUrl: targetUrl, reqPath: newPath, reqMethod: ep.method, reqBody: reqBodyRaw, resBody: "" };
+                } else {
+                     results[ep.id] = { status: 'ERR', label: 'Network Error', type: 'error', reqUrl: targetUrl, reqPath: newPath, reqMethod: ep.method, reqBody: reqBodyRaw, resBody: err.message };
+                }
+            }
+
+            updateOrAppendResultRow(ep, results[ep.id]);
+            updateSummaryCards();
+        };
+
+        function updateOrAppendResultRow(ep, res) {
+            let rowClass = "hover:bg-gray-100 dark:hover:bg-gray-800/70 transition-colors cursor-pointer ";
+            let badgeClass = "";
+            
+            if (res.type === 'allowed') {
+                rowClass += "bg-emerald-50/20 dark:bg-emerald-900/10";
+                badgeClass = "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800";
+            } else if (res.type === 'forbidden') {
+                rowClass += "bg-red-50/20 dark:bg-red-900/10";
+                badgeClass = "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400 border border-red-200 dark:border-red-800";
+            } else if (res.type === 'check') {
+                rowClass += "bg-amber-50/20 dark:bg-amber-900/10";
+                badgeClass = "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-400 border border-amber-200 dark:border-amber-800";
+            } else {
+                badgeClass = "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300 border border-gray-200 dark:border-gray-700";
+            }
+
+            const rowId = `detail-${ep.id.replace(/[^a-zA-Z0-9]/g, '-')}`;
+            const summaryId = `summary-${ep.id.replace(/[^a-zA-Z0-9]/g, '-')}`;
+            
+            let displayResBody = res.resBody;
+            try {
+                if (displayResBody && (displayResBody.startsWith('{') || displayResBody.startsWith('['))) {
+                    displayResBody = JSON.stringify(JSON.parse(displayResBody), null, 2);
+                }
+            } catch(e) {}
+
+            let displayReqBody = res.reqBody;
+            try {
+                if (displayReqBody && (displayReqBody.startsWith('{') || displayReqBody.startsWith('['))) {
+                    displayReqBody = JSON.stringify(JSON.parse(displayReqBody), null, 2);
+                }
+            } catch(e) {}
+
+            let formattedReqBody = displayReqBody 
+                ? `<textarea id="rerun-body-${ep.id}" spellcheck="false" class="block w-full text-xs font-mono text-gray-800 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-3 rounded-lg mt-1 h-48 resize-y shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">${escapeHtml(displayReqBody)}</textarea>` 
+                : '<span class="text-xs text-gray-500 italic mt-1 block">None (GET/DELETE request)</span>';
+            
+            let formattedResBody = displayResBody 
+                ? `<pre class="block w-full text-xs font-mono text-gray-800 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-3 rounded-lg mt-1 h-48 overflow-y-auto overflow-x-auto whitespace-pre-wrap break-words shadow-sm">${escapeHtml(displayResBody)}</pre>` 
+                : '<span class="text-xs text-gray-500 italic mt-1 block">Empty Response</span>';
+
+            let wasOpen = false;
+            const existingDetail = document.getElementById(rowId);
+            if (existingDetail && !existingDetail.classList.contains('hidden')) {
+                wasOpen = true;
+            }
+
+            const summaryHtml = `
+            <tr id="${summaryId}" class="${rowClass}" onclick="toggleDetailRow(event, '${rowId}')">
+                <td class="px-4 py-3 font-medium capitalize text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 shrink-0"><path d="m9 18 6-6-6-6"/></svg>
+                    ${ep.service}
+                </td>
+                <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs font-semibold rounded-md ${getMethodColor(ep.method)}">${ep.method}</span></td>
+                <td class="px-4 py-3 font-mono text-gray-600 dark:text-gray-400 truncate max-w-[300px]" title="${ep.path}">${ep.path}</td>
+                <td class="px-4 py-3 font-mono font-bold text-gray-700 dark:text-gray-300">${res.status}</td>
+                <td class="px-4 py-3 text-right"><span class="px-2 py-0.5 text-xs font-semibold rounded-md ${badgeClass}">${res.label}</span></td>
+            </tr>`;
+
+            const detailHtml = `
+            <tr id="${rowId}" class="${wasOpen ? '' : 'hidden'} bg-gray-50/80 dark:bg-gray-800/40 border-b border-gray-200 dark:border-gray-800">
+                <td colspan="5" class="px-6 py-4 space-y-4">
+                    <!-- Top Row: Full width path & run button -->
+                    <div>
+                        <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Request Path</p>
+                        <div class="flex gap-2 items-center">
+                            <span class="text-xs font-mono text-blue-700 bg-blue-50 border border-blue-100 dark:bg-blue-900/40 dark:text-blue-400 dark:border-blue-800 p-2 rounded-lg shadow-sm">${res.reqMethod}</span>
+                            <input type="text" id="rerun-path-${ep.id}" value="${escapeHtml(res.reqPath)}" class="flex-1 text-xs font-mono p-2 rounded-lg border border-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white shadow-sm" />
+                            <button type="button" id="rerun-btn-${ep.id}" onclick="rerunSingleTest('${ep.id}')" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition-colors shadow-sm whitespace-nowrap">Run Again</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Bottom Row: 2 Columns for Payloads -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div>
+                            <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Request Payload</p>
+                            ${formattedReqBody}
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Response Body</p>
+                            ${formattedResBody}
+                        </div>
+                    </div>
+                </td>
+            </tr>`;
+
+            const existingSummary = document.getElementById(summaryId);
+            if (existingSummary && existingDetail) {
+                existingSummary.outerHTML = summaryHtml;
+                existingDetail.outerHTML = detailHtml;
+            } else {
+                UI.resultsBody.insertAdjacentHTML('beforeend', summaryHtml + detailHtml);
+                const scrollContainer = UI.resultsTable.parentElement;
+                scrollContainer.scrollTop = scrollContainer.scrollHeight;
+            }
+        }
+
+        // Run
+        init();
+
+    </script>
+</body>
+</html>
